@@ -53,7 +53,7 @@ public class AccountRepository {
                 .orElseThrow(() -> new AccountNotFoundException("A conta com a chave pix '" + pix + "' não existe ou foi encerrada." ));
     }
 
-    public List<AccountWallet> List(){
+    public List<AccountWallet> list(){
         return this.accounts;
     }
 
