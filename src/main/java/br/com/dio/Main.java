@@ -2,11 +2,14 @@ package br.com.dio;
 
 import br.com.dio.exception.AccountNotFoundException;
 import br.com.dio.exception.NoFundsEnoughException;
+import br.com.dio.model.AccountWallet;
 import br.com.dio.repository.AccountRepository;
 import br.com.dio.repository.InvestimentRepository;
 
 import java.util.Arrays;
 import java.util.Scanner;
+
+import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 
 public class Main {
 
@@ -39,12 +42,12 @@ public class Main {
             switch (option){
                 case 1: createAccount();
                 case 2: createInvestment();
-                case 3:
+                case 3: createWalletInvestiment();
                 case 4: deposit();
                 case 5: withdraw();
-                case 6:
-                case 7:
-                case 8:
+                case 6: transferToAccount();
+                case 7: incInvestment();
+                case 8: rescueInvestment();
                 case 9: accountRepository.list().forEach(System.out::println);
                 case 10: investimentRepository.list().forEach(System.out::println);
                 case 11: investimentRepository.listWallets().forEach(System.out::println);
@@ -101,4 +104,71 @@ public class Main {
             System.out.println(ex.getMessage());
         }
     }
+
+    private static void transferToAccount(){
+        System.out.println("Informe a chave pix da conta de origem:");
+        var source = scanner.next();
+        System.out.println("Informe a chave pix da conta de destino:");
+        var target = scanner.next();
+        System.out.println("Informe o valor que será depositado:");
+        var amount = scanner.nextLong();
+        try {
+            accountRepository.transferMoney(source, target, amount);
+        } catch (AccountNotFoundException ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private static void createWalletInvestiment() {
+        System.out.println("Informe a chave pix da conta:");
+        var pix = scanner.next();
+        var account = accountRepository.findByPix(pix);
+        System.out.println("Informe o identificador do investimento");
+        var investmentId = scanner.nextInt();
+        var investmentWallet = investimentRepository.initInvestment(account, investmentId);
+        System.out.println("Conta de onvestimento criada: " + investmentWallet);
+    }
+
+    private static void incInvestment(){
+        System.out.println("Informe a chave pix da conta para investimento:");
+        var pix = scanner.next();
+        System.out.println("Informe o valor que será investido:");
+        var amount = scanner.nextLong();
+        try {
+            accountRepository.deposit(pix, amount);
+        } catch (NoFundsEnoughException | AccountNotFoundException ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private static void rescueInvestment(){
+        System.out.println("Informe a chave pix da conta para resgate do investimento:");
+        var pix = scanner.next();
+        System.out.println("Informe o valor que será sacado:");
+        var amount = scanner.nextLong();
+        try {
+            investimentRepository.withdraw(pix, amount);
+        } catch (AccountNotFoundException ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private static void checkHistory(){
+        System.out.println("Informe a chave pix da conta para verificar extrato: ");
+        var pix = scanner.next();
+        AccountWallet wallet;
+        try {
+            var sortedHistory =  accountRepository.getHistory(pix);
+            sortedHistory.forEach((k, v) -> {
+                System.out.println(k.format(ISO_DATE_TIME));
+                System.out.println(v.getFirst().transactionId());
+                System.out.println(v.getFirst().description());
+                System.out.println(v.size());
+            });
+        } catch (AccountNotFoundException ex){
+            System.out.println(ex.getMessage());
+        }
+
+    }
 }
+
